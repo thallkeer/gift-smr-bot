@@ -1,4 +1,6 @@
-﻿namespace GiftSmrBot.Core.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace GiftSmrBot.Core.Models
 {
     public class User
     {
@@ -11,6 +13,7 @@
             Id = id;
         }
 
+        [Key]
         public long Id { get; set; }
     }
 }

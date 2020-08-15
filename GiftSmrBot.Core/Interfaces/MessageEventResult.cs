@@ -5,7 +5,7 @@ namespace GiftSmrBot.Core.Interfaces
     public class MessageEventResult
     {
         public string Text { get; set; }
-        public IReplyMarkup ReplyMarkup { get; set; }
+        public IReplyMarkup ReplyMarkup { get; set; }        
 
         public MessageEventResult(IReplyMarkup replyMarkup, string text) : this(text)
         {

@@ -10,15 +10,23 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using System.Linq;
 using Telegram.Bot;
 
 namespace GiftSmrBot
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        readonly IWebHostEnvironment _env;
+        private readonly ILogger<Startup> _logger;
+
+        public Startup(IConfiguration configuration, IWebHostEnvironment env)
         {
             Configuration = configuration;
+            _env = env;
+            var loggerFactory = LoggerFactory.Create(builder => { builder.AddConsole(); });
+            _logger = loggerFactory.CreateLogger<Startup>();
         }
 
         public IConfiguration Configuration { get; }
@@ -35,18 +43,18 @@ namespace GiftSmrBot
 
             services.Configure<SecretLogin>(Configuration.GetSection("SecretLogin"));
 
+            string connectionPath = _env.IsDevelopment() ? "PostgresDevConnection" : "PostgresProdConnection";
+            
             services.AddDbContext<ApplicationContext>(options =>
-                options.UseNpgsql(Configuration.GetConnectionString("PostgresDevConnection")));
+                options.UseNpgsql(Configuration.GetConnectionString(connectionPath)));
 
-            var botConfig = new BotSettings();
-            Configuration.GetSection("BotConfiguration").Bind(botConfig);
+            var botConfigSection = Configuration.GetSection("BotConfiguration");           
+
+            BotSettings botConfig = botConfigSection.Get<BotSettings>();
 
             var botClient = new TelegramBotClient(botConfig.Token);
             string hook = $@"{botConfig.Host}/api/update";
-            botClient.SetWebhookAsync(hook);
-
-            //services.Configure<BotSettings>(Configuration.GetSection("BotConfiguration"));
-            //services.Configure<DbSettings>(options => options.Path = Configuration.GetConnectionString("JsonConnection"));           
+            botClient.SetWebhookAsync(hook);        
 
             services.AddSingleton<ITelegramBotClient>(botClient);
             services.AddSingleton<IStateMachine, PollStateMachine>();

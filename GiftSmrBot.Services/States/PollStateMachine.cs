@@ -2,6 +2,7 @@
 using GiftSmrBot.Core.Exceptions;
 using GiftSmrBot.Core.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 
@@ -12,6 +13,8 @@ namespace GiftSmrBot.Services
         private readonly Dictionary<string, IState> _stateStorage;
         private IStateFactory _stateFactory;
         private readonly IServiceScope _scope;
+        private readonly ILogger<PollStateMachine> _logger;
+
         public GiftCriteriaBuilder GiftCriteria { get; set; }
         private IStateFactory StateFactory
         {
@@ -24,10 +27,11 @@ namespace GiftSmrBot.Services
             }
         }
 
-        public PollStateMachine(IServiceProvider scopeFactory)
+        public PollStateMachine(IServiceProvider scopeFactory, ILogger<PollStateMachine> logger)
         {
             _stateStorage = new Dictionary<string, IState>();
             _scope = scopeFactory.CreateScope();
+            _logger = logger;
             GiftCriteria = new GiftCriteriaBuilder();
         }
 
@@ -38,29 +42,39 @@ namespace GiftSmrBot.Services
 
         public MessageEventResult ProcessMessage(MessageEvent messageEvent)
         {
-            IStateFactory stateFactory = StateFactory;
-            if (!_stateStorage.TryGetValue(messageEvent.Id, out IState currentState))
-            {
-                currentState = stateFactory.GetInitialState();
-                SetState(messageEvent.Id, currentState);
-            }
-            MessageEventResult result;
+            MessageEventResult result = null;
             try
             {
-                result = currentState.HandleEvent(messageEvent);
-                if (!FinalStateReached(messageEvent.Id))
+                IStateFactory stateFactory = StateFactory;
+                if (!_stateStorage.TryGetValue(messageEvent.Id, out IState currentState))
                 {
-                    IState nextState = stateFactory.GetNextState(currentState);
-                    SetState(messageEvent.Id, nextState);
+                    currentState = stateFactory.GetInitialState();
+                    SetState(messageEvent.Id, currentState);
+                }                
+                try
+                {
+                    result = currentState.HandleEvent(messageEvent);
+                    if (!FinalStateReached(messageEvent.Id))
+                    {
+                        IState nextState = stateFactory.GetNextState(currentState);
+                        SetState(messageEvent.Id, nextState);
+                    }
+                    else
+                        SetState(messageEvent.Id, stateFactory.GetInitialState());
                 }
-                else
-                    SetState(messageEvent.Id, stateFactory.GetInitialState());
+                catch (PreviousStateUserAnswerException prevStateAnswerEx)
+                {
+                    _logger.LogInformation(prevStateAnswerEx, "Error in state processing " + prevStateAnswerEx.Message);
+                    _logger.LogError(prevStateAnswerEx, prevStateAnswerEx.Message);
+                    result = new MessageEventResult(prevStateAnswerEx.Message);
+                }
+                
             }
-            catch (PreviousStateUserAnswerException prevStateAnswerEx)
+            catch (Exception ex)
             {
-                result = new MessageEventResult(prevStateAnswerEx.Message);
-            }           
-            return result;
+                _logger.LogError(ex, ex.Message);
+            }
+            return result ?? new MessageEventResult(string.Empty);
         }
 
         public bool FinalStateReached(string id) => _stateStorage.TryGetValue(id, out IState state) && state is GetGiftState;
