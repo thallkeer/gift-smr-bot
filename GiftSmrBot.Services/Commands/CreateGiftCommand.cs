@@ -4,6 +4,7 @@ using GiftSmrBot.Core.Extensions;
 using GiftSmrBot.Core.Models;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Telegram.Bot;
@@ -42,17 +43,22 @@ namespace GiftSmrBot.Services.Commands
             {
                 string[] args = messageText.Split(Name, StringSplitOptions.RemoveEmptyEntries)[0].Split(',');
                 string messageForUser;
-                if (ValidateGiftArgs(args))
+                if (ParsedGiftArgs.ValidateAndReturnParsed(args, out ParsedGiftArgs parsedGiftArgs))
                 {
-                    Gift gift = new Gift
+                    List<Gift> gifts = new List<Gift>(parsedGiftArgs.Recipients.Count);
+                    foreach (int recipient in parsedGiftArgs.Recipients)
                     {
-                        Title = args[0].Trim(),
-                        Url = args[1].Trim(),                        
-                        AgeCategory = (AgeCategories)Enum.Parse(typeof(AgeCategories), args[3]),
-                        Recipient = (Recipients)Enum.Parse(typeof(Recipients), args[4])
-                    };
-                    gift.SetPriceFromRubles(Convert.ToInt32(args[2]));
-                    await _giftService.Create(gift);
+                        Gift gift = new Gift
+                        {
+                            Title = parsedGiftArgs.Title,
+                            Url = parsedGiftArgs.Url,
+                            Price = parsedGiftArgs.Price,
+                            AgeCategory = (AgeCategories)parsedGiftArgs.AgeCategory,
+                            Recipient = (Recipients)recipient
+                        };
+                        gifts.Add(gift);
+                    }
+                    await _giftService.CreateRangeAsync(gifts);
                     messageForUser = "Подарок успешно создан!";
                 }
                 else
@@ -63,13 +69,47 @@ namespace GiftSmrBot.Services.Commands
             }            
         }
 
-        private bool ValidateGiftArgs(string[] args)
+        private class ParsedGiftArgs
         {
-            return args.Length == 5
-                && (!string.IsNullOrEmpty(args[0]) && !string.IsNullOrEmpty(args[1]))
-                && int.TryParse(args[2], out int _)
-                && Enum.IsDefined(typeof(AgeCategories), Convert.ToInt32(args[3]))
-                && Enum.IsDefined(typeof(Recipients), Convert.ToInt32(args[4]));
+            public string Title { get; set; }
+            public string Url { get; set; }
+            public double Price { get; set; }
+            public int AgeCategory { get; set; }
+            public List<int> Recipients { get; set; }
+
+            private ParsedGiftArgs() { }
+
+            public static bool ValidateAndReturnParsed(string[] args, out ParsedGiftArgs parsedGiftArgs)
+            {
+                parsedGiftArgs = null;
+                if (args.Length == 5)
+                    if (!string.IsNullOrEmpty(args[0]) && !string.IsNullOrEmpty(args[1]))
+                        if (double.TryParse(args[2], out double price) && int.TryParse(args[3], out int ageCategory))
+
+                            if (Enum.IsDefined(typeof(AgeCategories), ageCategory))
+                            {
+                                var recipientArgs = args[4].Split(';').ToList();
+                                List<int> recipients = new List<int>(recipientArgs.Count);
+                                recipientArgs.ForEach(arg =>
+                                {
+                                    if (int.TryParse(arg, out int recipient))
+                                        recipients.Add(recipient);
+                                });
+                                if (recipients.Count == recipientArgs.Count)
+                                {
+                                    parsedGiftArgs = new ParsedGiftArgs
+                                    {
+                                        Title = args[0].Trim(),
+                                        Url = args[1].Trim(),
+                                        Price = price,
+                                        AgeCategory = ageCategory,
+                                        Recipients = recipients
+                                    };
+                                    return true;
+                                }
+                            }
+                return false;
+            }
         }
     }
 }

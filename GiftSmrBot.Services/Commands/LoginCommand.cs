@@ -35,7 +35,7 @@ namespace GiftSmrBot.Services.Commands
             
             if (args.Length == 2 && args[1] == _secretPassword)
             {
-                await _userService.Create(new Core.Models.User(message.Chat.Id));
+                await _userService.CreateAsync(new Core.Models.User(message.Chat.Id));
                 await botClient.SendTextMessageAsync(chatId, "Вы вошли в качестве администратора.");
             }
             else

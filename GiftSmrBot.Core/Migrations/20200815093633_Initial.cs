@@ -13,9 +13,9 @@ namespace GiftSmrBot.Core.Migrations
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    Title = table.Column<string>(nullable: true),
-                    Url = table.Column<string>(nullable: true),
-                    Price = table.Column<int>(nullable: false),
+                    Title = table.Column<string>(nullable: false),
+                    Url = table.Column<string>(nullable: false),
+                    Price = table.Column<double>(nullable: false),
                     AgeCategory = table.Column<int>(nullable: false),
                     Recipient = table.Column<int>(nullable: false)
                 },
@@ -23,12 +23,27 @@ namespace GiftSmrBot.Core.Migrations
                 {
                     table.PrimaryKey("PK_Gifts", x => x.Id);
                 });
+
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<long>(nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                });
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
                 name: "Gifts");
+
+            migrationBuilder.DropTable(
+                name: "Users");
         }
     }
 }

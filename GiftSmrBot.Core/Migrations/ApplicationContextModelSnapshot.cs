@@ -28,8 +28,8 @@ namespace GiftSmrBot.Core.Migrations
                     b.Property<int>("AgeCategory")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Price")
-                        .HasColumnType("integer");
+                    b.Property<double>("Price")
+                        .HasColumnType("double precision");
 
                     b.Property<int>("Recipient")
                         .HasColumnType("integer");

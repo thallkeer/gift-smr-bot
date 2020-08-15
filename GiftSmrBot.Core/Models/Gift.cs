@@ -16,29 +16,22 @@ namespace GiftSmrBot.Core.Models
         public string Url { get; set; }
         [Required, Display(Name = "Стоимость, руб")]
         [DataType(DataType.Currency)]
-        public int Price { get; set; }
+        public double Price { get; set; }
         [Required, Display(Name = "Возрастная категория")]
         public AgeCategories AgeCategory { get; set; }
         [Required, Display(Name = "Одаряемый")]
         public Recipients Recipient { get; set; }
-        [JsonIgnore]
-        public decimal PriceToRubles => Price / 100;
 
         public Gift()
         {
 
         }
 
-        public void SetPriceFromRubles(decimal rubles)
-        {
-            Price = (int)(rubles * 100);
-        }
-
         public override string ToString()
         {
             return $@"
 {Title}
-{PriceToRubles} рублей
+{Price} рублей
 {Url}
 {AgeCategory.GetDisplayName()}
 {Recipient.GetDisplayName()}";

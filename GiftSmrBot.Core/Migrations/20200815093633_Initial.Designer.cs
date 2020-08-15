@@ -9,8 +9,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GiftSmrBot.Core.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    [Migration("20200812172315_AddRestrictions")]
-    partial class AddRestrictions
+    [Migration("20200815093633_Initial")]
+    partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -30,8 +30,8 @@ namespace GiftSmrBot.Core.Migrations
                     b.Property<int>("AgeCategory")
                         .HasColumnType("integer");
 
-                    b.Property<int>("Price")
-                        .HasColumnType("integer");
+                    b.Property<double>("Price")
+                        .HasColumnType("double precision");
 
                     b.Property<int>("Recipient")
                         .HasColumnType("integer");

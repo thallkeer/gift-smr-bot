@@ -72,8 +72,10 @@ namespace GiftSmrBot
             services.AddScoped<ICommandService, CommandsService>();
         }
 
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, ApplicationContext db)
         {
+            db.Database.Migrate();
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

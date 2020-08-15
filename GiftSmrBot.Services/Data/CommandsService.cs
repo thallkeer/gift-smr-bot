@@ -38,7 +38,7 @@ namespace GiftSmrBot.Services.Data
                     if (command.IsSecretCommand)
                     {
                         var chatId = message.Chat.Id;
-                        var user = await _userService.GetById(chatId);
+                        var user = await _userService.GetByIdAsync(chatId);
                         if (user == null)
                         {
                             var loginCommand = _commands.OfType<LoginCommand>().First();

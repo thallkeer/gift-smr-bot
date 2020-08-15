@@ -20,19 +20,25 @@ namespace GiftSmrBot.Services.Data
             this.dbSet = context.Set<TEntity>();
         }
 
-        public virtual async Task Create(TEntity entity)
-        {
+        public virtual async Task CreateAsync(TEntity entity)
+        {            
             await dbSet.AddAsync(entity);
             await context.SaveChangesAsync();
         }
 
-        public async Task<bool> Delete(TKey id)
+        public async Task CreateRangeAsync(IEnumerable<TEntity> entities)
         {
-            var entity = await GetById(id);
-            return await Delete(entity);
+            await dbSet.AddRangeAsync(entities);
+            await context.SaveChangesAsync();
         }
 
-        public async Task<bool> Delete(TEntity entity)
+        public async Task<bool> DeleteAsync(TKey id)
+        {
+            var entity = await GetByIdAsync(id);
+            return await DeleteAsync(entity);
+        }
+
+        public async Task<bool> DeleteAsync(TEntity entity)
         {
             if (entity != null)
             {
@@ -47,7 +53,7 @@ namespace GiftSmrBot.Services.Data
             return dbSet.AsNoTracking();
         }
 
-        public async Task<TEntity> GetById(TKey id)
+        public async Task<TEntity> GetByIdAsync(TKey id)
         {
             return await dbSet.FindAsync(id);
         }
